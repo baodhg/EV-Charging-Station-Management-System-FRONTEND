@@ -1,22 +1,56 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { register as registerAccount } from "./lib/api";
 
 export default function Register() {
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    setError(null);
+    setSuccess(null);
+
     if (form.password !== form.confirmPassword) {
-      alert("Passwords do not match!");
+      setError("Passwords do not match.");
       return;
     }
-    alert(`Đăng ký thành công cho ${form.name} (${form.email})`);
-    navigate("/");
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await registerAccount({
+        fullName: form.name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+      });
+
+      if (!response.success) {
+        throw new Error(response.message || "Registration failed.");
+      }
+
+      setSuccess(response.message || "Registration successful.");
+      setForm({ name: "", email: "", password: "", confirmPassword: "" });
+
+      console.info("Registration response", response.data);
+
+      setTimeout(() => {
+        navigate("/");
+      }, 1200);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -34,7 +68,24 @@ export default function Register() {
           <input name="password" value={form.password} onChange={handleChange} type="password" placeholder="Password" className="w-full rounded-2xl bg-white/20 text-white px-4 py-3 shadow-inner focus:ring-2 focus:ring-cyan-400 placeholder:text-gray-300" required />
           <input name="confirmPassword" value={form.confirmPassword} onChange={handleChange} type="password" placeholder="Confirm Password" className="w-full rounded-2xl bg-white/20 text-white px-4 py-3 shadow-inner focus:ring-2 focus:ring-cyan-400 placeholder:text-gray-300" required />
 
-          <button type="submit" className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-2xl py-3 shadow-lg hover:shadow-cyan-500/30 hover:scale-[1.02] transition">Sign Up</button>
+          {error ? (
+            <p className="text-sm text-red-300" role="alert">
+              {error}
+            </p>
+          ) : null}
+          {success ? (
+            <p className="text-sm text-emerald-300" role="status">
+              {success}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-2xl py-3 shadow-lg hover:shadow-cyan-500/30 hover:scale-[1.02] transition disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? "Signing Up..." : "Sign Up"}
+          </button>
         </form>
 
         <p className="text-sm text-gray-300 text-center mt-6">

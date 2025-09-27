@@ -4,21 +4,36 @@ interface ApiResponse<T> {
   data: T;
 }
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const rawBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+const baseUrl = rawBaseUrl ? rawBaseUrl.replace(/\/+$/, "") : "";
+const hasBaseUrl = baseUrl.length > 0;
+let baseUrlWarningShown = false;
+
+function resolveUrl(path: string) {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return hasBaseUrl ? `${baseUrl}${normalizedPath}` : normalizedPath;
+}
 
 async function api<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>> {
-  if (!BASE_URL) {
-    throw new Error("Missing VITE_API_BASE_URL environment variable.");
+  if (!hasBaseUrl && import.meta.env.DEV && !baseUrlWarningShown) {
+    console.info(
+      "VITE_API_BASE_URL is not set; using relative paths. Ensure the dev proxy forwards /api to the backend."
+    );
+    baseUrlWarningShown = true;
   }
+
+  const requestUrl = resolveUrl(path);
 
   let response: Response;
   try {
-    response = await fetch(`${BASE_URL}${path}`, {
+    response = await fetch(requestUrl, {
       headers: { "Content-Type": "application/json", ...init?.headers },
       ...init,
     });
   } catch (error) {
-    throw new Error("Unable to reach the backend API. Confirm the server is running and HTTPS is trusted.");
+    throw new Error(
+      "Unable to reach the backend API. Confirm the server is running and the configured URL is accessible."
+    );
   }
 
   const contentType = response.headers.get("content-type") ?? "";
@@ -61,6 +76,31 @@ export interface LoginResponse {
 
 export async function login(payload: LoginPayload) {
   return api<LoginResponse>("/api/v1/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export interface RegisterPayload {
+  fullName: string;
+  email: string;
+  password: string;
+  phoneNumber?: string;
+}
+
+export interface RegisterResponse {
+  userId: string;
+  email: string;
+  fullName: string;
+  status: string;
+  createdAt: string;
+  accessToken: string;
+  expiresAt: string;
+  refreshToken?: string;
+}
+
+export async function register(payload: RegisterPayload) {
+  return api<RegisterResponse>("/api/v1/auth/register", {
     method: "POST",
     body: JSON.stringify(payload),
   });
