@@ -143,10 +143,41 @@ export async function updateProfile(payload: UpdateProfilePayload) {
   });
 }
 
-export async function changePassword(oldPassword: string, newPassword: string) {
+// 🔹 Đổi mật khẩu
+export async function changePassword(currentPassword: string, newPassword: string) {
   return api<string>("/api/v1/users/change-password", {
     method: "POST",
-    body: JSON.stringify({ oldPassword, newPassword }),
+    body: JSON.stringify({
+      CurrentPassword: currentPassword,
+      NewPassword: newPassword,
+    }),
+  });
+}
+
+//
+// 🔹 PASSWORD RECOVERY API
+//
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export async function forgotPassword(payload: ForgotPasswordPayload) {
+  return api<string>("/api/v1/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export interface ResetPasswordPayload {
+  email: string;
+  otp: string;
+  newPassword: string;
+}
+
+export async function resetPassword(payload: ResetPasswordPayload) {
+  return api<string>("/api/v1/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }
 
