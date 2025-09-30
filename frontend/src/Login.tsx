@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaApple } from "react-icons/fa";
-import { login } from "./lib/api"; // hàm gọi API login
+import { login } from "./lib/api"; // ✅ gọi API login
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -28,12 +28,16 @@ export default function Login() {
         throw new Error(response.message || "Login failed");
       }
 
-      // 🔹 Lưu token + user vào localStorage
+      // ✅ Lưu token + user vào localStorage
       localStorage.setItem("token", response.data.accessToken);
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
-      // 🔹 Điều hướng sang dashboard
-      navigate("/dashboard");
+      // ✅ Kiểm tra role để redirect
+      if (response.data.user.roles.includes("Admin")) {
+        navigate("/admin"); // admin → admin dashboard
+      } else {
+        navigate("/dashboard"); // user thường → user dashboard
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Login failed";
       setError(msg);
@@ -63,6 +67,7 @@ export default function Login() {
 
         {/* Form */}
         <form className="space-y-5" onSubmit={handleSubmit}>
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Email
@@ -76,6 +81,8 @@ export default function Login() {
               required
             />
           </div>
+
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Password
@@ -100,14 +107,25 @@ export default function Login() {
             </Link>
           </div>
 
+          {/* Error message */}
           {error && <p className="text-sm text-red-500">{error}</p>}
 
+          {/* Submit button */}
           <button
             type="submit"
             disabled={isLoading}
             className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold rounded-2xl py-3 shadow-md hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isLoading ? "Signing in..." : "Sign In"}
+          </button>
+
+          {/* 🔹 Login with OTP */}
+          <button
+            type="button"
+            onClick={() => navigate("/otp-login")}
+            className="w-full mt-3 bg-white border border-blue-500 text-blue-600 font-semibold rounded-2xl py-3 shadow-md hover:bg-blue-50 transition"
+          >
+            Login with OTP
           </button>
         </form>
 
@@ -137,6 +155,7 @@ export default function Login() {
   );
 }
 
+/** 🔹 Social login button */
 function SocialButton({ icon }: { icon: React.ReactNode }) {
   return (
     <button

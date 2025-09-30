@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaBolt, FaMapMarkerAlt, FaCog } from "react-icons/fa";
+import { FaBolt, FaMapMarkerAlt } from "react-icons/fa";
 import StationDetailsModal from "./StationDetailsModal";
-import UserSettingsPage from "./UserSettingsPage";
 
 interface User {
   userId: string;
@@ -41,18 +40,11 @@ export default function Dashboard() {
     );
   }
 
-  const tabs = [
-    "Station Map",
-    "Reservations",
-    "History",
-    "Profile",
-    "Wallet",
-    "Settings",
-  ];
+  const tabs = ["Station Map", "Reservations", "History", "Profile", "Wallet"];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300 text-gray-900 px-6 py-8">
-      {/* Header */}
+      {/* ================= Header ================= */}
       <header className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold flex items-center gap-2 text-blue-700">
           <FaBolt className="text-blue-600" />
@@ -64,12 +56,6 @@ export default function Dashboard() {
             <p className="text-sm text-gray-600">{user.email}</p>
           </div>
           <button
-            onClick={() => setActiveTab("Settings")}
-            className="p-2 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
-          >
-            <FaCog />
-          </button>
-          <button
             onClick={handleSignOut}
             className="px-4 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 transition"
           >
@@ -78,7 +64,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Tab Bar */}
+      {/* ================= Tab Bar ================= */}
       <div className="flex bg-blue-100 rounded-full p-1 mb-8 shadow-inner">
         {tabs.map((tab) => (
           <button
@@ -98,6 +84,7 @@ export default function Dashboard() {
       {/* ================= Station Map ================= */}
       {activeTab === "Station Map" && (
         <>
+          {/* Card */}
           <section className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg mb-8">
             <div className="flex justify-between items-center">
               <div>
@@ -143,7 +130,7 @@ export default function Dashboard() {
             ]}
           />
 
-          {/* Content Grid */}
+          {/* Map Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-md">
               <h3 className="text-lg font-semibold mb-4">Charging Station Map</h3>
@@ -162,6 +149,7 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* Nearby stations */}
             <aside className="bg-white rounded-2xl p-6 shadow-md">
               <h3 className="text-lg font-semibold mb-4">Nearby Stations</h3>
               <div className="space-y-4">
@@ -274,42 +262,36 @@ export default function Dashboard() {
 
       {/* ================= Profile ================= */}
       {activeTab === "Profile" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl p-6 shadow-md">
-            <h3 className="text-lg font-semibold mb-4">Personal Information</h3>
-            <div className="space-y-3 text-gray-700">
-              <div>
-                <p className="text-sm">Full Name</p>
-                <p className="text-lg font-semibold">{user.fullName}</p>
-              </div>
-              <div>
-                <p className="text-sm">Email</p>
-                <p>{user.email}</p>
-              </div>
-              <div>
-                <p className="text-sm">Phone Number</p>
-                <p>{user.phoneNumber || "0901234567"}</p>
-              </div>
+        <div className="max-w-2xl mx-auto bg-white rounded-2xl p-6 shadow-md">
+          <h3 className="text-lg font-semibold mb-6">User Profile</h3>
+
+          <div className="space-y-4 mb-6">
+            <div>
+              <p className="text-sm text-gray-500">Full Name</p>
+              <p className="text-lg font-semibold">{user.fullName}</p>
             </div>
-            <button className="mt-6 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium hover:opacity-90 transition">
+            <div>
+              <p className="text-sm text-gray-500">Email</p>
+              <p>{user.email}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Phone Number</p>
+              <p>{user.phoneNumber || "0901234567"}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => navigate("/profile/edit")}
+              className="w-full px-4 py-2 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition"
+            >
               Update Information
             </button>
-          </div>
-          <div className="bg-white rounded-2xl p-6 shadow-md">
-            <h3 className="text-lg font-semibold mb-4">Vehicle Information</h3>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="text-cyan-400 text-2xl">🚗</div>
-              <div>
-                <p className="text-lg font-semibold">VinFast VF8</p>
-                <p className="text-sm text-gray-500">Battery: 87.7 kWh</p>
-              </div>
-            </div>
-            <p className="text-sm text-gray-700 mb-2">Connector Types</p>
-            <span className="inline-block px-3 py-1 rounded-full bg-gray-200 text-sm">
-              CCS
-            </span>
-            <button className="mt-6 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium hover:opacity-90 transition">
-              Update Vehicle Info
+            <button
+              onClick={() => navigate("/profile/change-password")}
+              className="w-full px-4 py-2 rounded-xl bg-gray-800 text-white font-medium hover:bg-black transition"
+            >
+              Change Password
             </button>
           </div>
         </div>
@@ -335,6 +317,7 @@ export default function Dashboard() {
               </button>
             </div>
           </div>
+
           <div className="bg-white rounded-2xl p-6 shadow-md">
             <h3 className="text-lg font-semibold mb-4">Payment Methods</h3>
             <div className="flex items-center justify-between bg-gray-100 rounded-xl p-4 mb-3">
@@ -361,9 +344,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-
-      {/* ================= Settings ================= */}
-      {activeTab === "Settings" && <UserSettingsPage user={user} />}
     </div>
   );
 }

@@ -117,6 +117,48 @@ export async function register(payload: RegisterPayload) {
 }
 
 //
+// 🔹 OTP LOGIN API
+//
+export interface SendOtpLoginPayload {
+  email?: string;
+  phone?: string;
+}
+
+export interface VerifyOtpLoginPayload {
+  otp: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface OtpLoginResponse {
+  accessToken: string;
+  expiresAt: string;
+  refreshToken?: string;
+  user: {
+    userId: string;
+    fullName: string;
+    email: string;
+    roles: string[];
+  };
+}
+
+// Gửi OTP
+export async function sendOtpLogin(payload: SendOtpLoginPayload) {
+  return api<string>("/api/v1/auth/send-otp-login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+// Xác thực OTP
+export async function verifyOtpLogin(payload: VerifyOtpLoginPayload) {
+  return api<OtpLoginResponse>("/api/v1/auth/verify-otp-login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+//
 // 🔹 USER API
 //
 export interface UserProfile {
@@ -143,10 +185,41 @@ export async function updateProfile(payload: UpdateProfilePayload) {
   });
 }
 
-export async function changePassword(oldPassword: string, newPassword: string) {
+// 🔹 Đổi mật khẩu
+export async function changePassword(currentPassword: string, newPassword: string) {
   return api<string>("/api/v1/users/change-password", {
     method: "POST",
-    body: JSON.stringify({ oldPassword, newPassword }),
+    body: JSON.stringify({
+      CurrentPassword: currentPassword,
+      NewPassword: newPassword,
+    }),
+  });
+}
+
+//
+// 🔹 PASSWORD RECOVERY API
+//
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export async function forgotPassword(payload: ForgotPasswordPayload) {
+  return api<string>("/api/v1/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export interface ResetPasswordPayload {
+  email: string;
+  otp: string;
+  newPassword: string;
+}
+
+export async function resetPassword(payload: ResetPasswordPayload) {
+  return api<string>("/api/v1/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }
 
