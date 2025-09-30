@@ -9,10 +9,11 @@ import Profile from "./Profile";
 import Wallet from "./Wallet";
 import Login from "./Login";
 import Register from "./Register";
-import AdminDashboard from "./AdminDashboard";
+import ForgotPasswordPage from "./ForgotPasswordPage";
+import OtpLoginPage from "./OtpLoginPage"; // 👈 mới thêm
 import ProfileEditPage from "./ProfileEditPage";
 import ChangePasswordPage from "./ChangePasswordPage";
-import ForgotPasswordPage from "./ForgotPasswordPage";
+import AdminDashboard from "./AdminDashboard";
 
 // 🔹 Route bảo vệ cho user
 function PrivateRoute({ element }: { element: ReactNode }) {
@@ -48,44 +49,21 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/otp-login" element={<OtpLoginPage />} /> {/* 👈 Login bằng OTP */}
 
         {/* 🔹 User routes */}
-        <Route
-          path="/dashboard"
-          element={<PrivateRoute element={<Dashboard />} />}
-        />
-        <Route
-          path="/reservations"
-          element={<PrivateRoute element={<Reservations />} />}
-        />
-        <Route
-          path="/history"
-          element={<PrivateRoute element={<History />} />}
-        />
-        <Route
-          path="/wallet"
-          element={<PrivateRoute element={<Wallet />} />}
-        />
+        <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
+        <Route path="/reservations" element={<PrivateRoute element={<Reservations />} />} />
+        <Route path="/history" element={<PrivateRoute element={<History />} />} />
+        <Route path="/wallet" element={<PrivateRoute element={<Wallet />} />} />
 
         {/* 🔹 Profile + Edit + Change Password */}
-        <Route
-          path="/profile"
-          element={<PrivateRoute element={<Profile />} />}
-        />
-        <Route
-          path="/profile/edit"
-          element={<PrivateRoute element={<ProfileEditPage />} />}
-        />
-        <Route
-          path="/profile/change-password"
-          element={<PrivateRoute element={<ChangePasswordPage />} />}
-        />
+        <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
+        <Route path="/profile/edit" element={<PrivateRoute element={<ProfileEditPage />} />} />
+        <Route path="/profile/change-password" element={<PrivateRoute element={<ChangePasswordPage />} />} />
 
         {/* 🔹 Admin routes */}
-        <Route
-          path="/admin"
-          element={<AdminRoute element={<AdminDashboard />} />}
-        />
+        <Route path="/admin" element={<AdminRoute element={<AdminDashboard />} />} />
 
         {/* 🔹 404 fallback */}
         <Route

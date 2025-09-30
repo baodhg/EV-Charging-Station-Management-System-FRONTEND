@@ -117,6 +117,48 @@ export async function register(payload: RegisterPayload) {
 }
 
 //
+// 🔹 OTP LOGIN API
+//
+export interface SendOtpLoginPayload {
+  email?: string;
+  phone?: string;
+}
+
+export interface VerifyOtpLoginPayload {
+  otp: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface OtpLoginResponse {
+  accessToken: string;
+  expiresAt: string;
+  refreshToken?: string;
+  user: {
+    userId: string;
+    fullName: string;
+    email: string;
+    roles: string[];
+  };
+}
+
+// Gửi OTP
+export async function sendOtpLogin(payload: SendOtpLoginPayload) {
+  return api<string>("/api/v1/auth/send-otp-login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+// Xác thực OTP
+export async function verifyOtpLogin(payload: VerifyOtpLoginPayload) {
+  return api<OtpLoginResponse>("/api/v1/auth/verify-otp-login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+//
 // 🔹 USER API
 //
 export interface UserProfile {

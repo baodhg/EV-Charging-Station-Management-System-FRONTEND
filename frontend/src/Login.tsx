@@ -118,6 +118,15 @@ export default function Login() {
           >
             {isLoading ? "Signing in..." : "Sign In"}
           </button>
+
+          {/* 🔹 Login with OTP */}
+          <button
+            type="button"
+            onClick={() => navigate("/otp-login")}
+            className="w-full mt-3 bg-white border border-blue-500 text-blue-600 font-semibold rounded-2xl py-3 shadow-md hover:bg-blue-50 transition"
+          >
+            Login with OTP
+          </button>
         </form>
 
         {/* Divider */}
