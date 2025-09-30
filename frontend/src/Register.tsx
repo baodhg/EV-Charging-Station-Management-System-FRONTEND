@@ -1,101 +1,146 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { register as registerAccount } from "./lib/api";
+import { register } from "./lib/api";
 
 export default function Register() {
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const navigate = useNavigate();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setError(null);
-    setSuccess(null);
 
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match.");
+    if (!fullName || !email || !password) {
+      setError("Please fill in all required fields.");
       return;
     }
 
-    setIsSubmitting(true);
-
+    setIsLoading(true);
     try {
-      const response = await registerAccount({
-        fullName: form.name.trim(),
-        email: form.email.trim(),
-        password: form.password,
+      const response = await register({
+        fullName,
+        email,
+        password,
+        phoneNumber: phone,
       });
 
       if (!response.success) {
-        throw new Error(response.message || "Registration failed.");
+        throw new Error(response.message || "Register failed");
       }
 
-      setSuccess(response.message || "Registration successful.");
-      setForm({ name: "", email: "", password: "", confirmPassword: "" });
+      // 🔹 Lưu token + user
+      localStorage.setItem("token", response.data.accessToken);
+      localStorage.setItem("user", JSON.stringify(response.data));
 
-      console.info("Registration response", response.data);
-
-      setTimeout(() => {
-        navigate("/");
-      }, 1200);
+      // 🔹 Điều hướng sang dashboard
+      navigate("/dashboard");
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
-      setError(message);
+      const msg = err instanceof Error ? err.message : "Register failed";
+      setError(msg);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-gray-900 via-black to-indigo-950 px-4">
-      {/* Background lightning */}
-      <div className="absolute inset-0 bg-lightning"></div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300 px-4">
+      <div className="w-full max-w-md bg-white shadow-2xl rounded-3xl p-10">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg bg-blue-500 text-white text-3xl font-bold">
+            ⚡
+          </div>
+        </div>
 
-      <div className="relative z-10 w-full max-w-md bg-white/10 backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden border border-white/20 p-8">
-        <h2 className="text-2xl font-bold text-white mb-2">Create Account</h2>
-        <p className="text-sm text-gray-300 mb-8">Sign up as <span className="text-cyan-300">EV Driver</span></p>
+        {/* Heading */}
+        <h2 className="text-3xl font-bold text-center text-blue-700 mb-2">
+          Create Account
+        </h2>
+        <p className="text-gray-600 text-center mb-8">
+          Sign up to get started
+        </p>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <input name="name" value={form.name} onChange={handleChange} placeholder="Full Name" className="w-full rounded-2xl bg-white/20 text-white px-4 py-3 shadow-inner focus:ring-2 focus:ring-cyan-400 placeholder:text-gray-300" required />
-          <input name="email" value={form.email} onChange={handleChange} type="email" placeholder="Email" className="w-full rounded-2xl bg-white/20 text-white px-4 py-3 shadow-inner focus:ring-2 focus:ring-cyan-400 placeholder:text-gray-300" required />
-          <input name="password" value={form.password} onChange={handleChange} type="password" placeholder="Password" className="w-full rounded-2xl bg-white/20 text-white px-4 py-3 shadow-inner focus:ring-2 focus:ring-cyan-400 placeholder:text-gray-300" required />
-          <input name="confirmPassword" value={form.confirmPassword} onChange={handleChange} type="password" placeholder="Confirm Password" className="w-full rounded-2xl bg-white/20 text-white px-4 py-3 shadow-inner focus:ring-2 focus:ring-cyan-400 placeholder:text-gray-300" required />
+        {/* Form */}
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Full Name
+            </label>
+            <input
+              type="text"
+              placeholder="Your name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-full rounded-2xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
 
-          {error ? (
-            <p className="text-sm text-red-300" role="alert">
-              {error}
-            </p>
-          ) : null}
-          {success ? (
-            <p className="text-sm text-emerald-300" role="status">
-              {success}
-            </p>
-          ) : null}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-2xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-2xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone (optional)
+            </label>
+            <input
+              type="tel"
+              placeholder="+84 123 456 789"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full rounded-2xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {error && <p className="text-sm text-red-500">{error}</p>}
 
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-2xl py-3 shadow-lg hover:shadow-cyan-500/30 hover:scale-[1.02] transition disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={isLoading}
+            className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold rounded-2xl py-3 shadow-md hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? "Signing Up..." : "Sign Up"}
+            {isLoading ? "Signing up..." : "Sign Up"}
           </button>
         </form>
 
-        <p className="text-sm text-gray-300 text-center mt-6">
+        {/* Login link */}
+        <p className="text-sm text-gray-600 text-center mt-6">
           Already have an account?{" "}
-          <Link to="/" className="text-cyan-400 hover:underline">Sign in</Link>
+          <Link to="/login" className="text-blue-600 hover:underline">
+            Sign in
+          </Link>
         </p>
-
-        <div className="mt-4 text-center">
-          <button onClick={() => navigate("/")} className="text-sm text-gray-400 hover:text-white transition">← Back to Login</button>
-        </div>
       </div>
     </div>
   );
