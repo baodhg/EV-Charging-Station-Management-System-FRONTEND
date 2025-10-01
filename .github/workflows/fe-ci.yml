@@ -3,7 +3,7 @@ name: FE CI (typecheck, lint, build, vitest, playwright, a11y)
 
 on:
   pull_request:
-    branches: [JT92-Fanclub]
+    branches: [main]
     paths:
       - "src/**"
       - "public/**"
