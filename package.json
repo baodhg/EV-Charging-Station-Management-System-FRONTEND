@@ -10,14 +10,14 @@
     "lint": "eslint src scripts vite.config.ts playwright.config.ts",
     "test": "vitest run",
     "e2e": "playwright test",
-    "a11y": "start-server-and-test \"npm:dev\" http://localhost:5173 \"node scripts/run-pa11y.cjs\""
+    "a11y": "start-server-and-test \"npm run dev\" http://localhost:5173 \"node scripts/run-pa11y.mjs\""
   },
   "dependencies": {
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.9.1"
-  },
+  }, 
   "devDependencies": {
     "@playwright/test": "^1.55.1",
     "@testing-library/jest-dom": "^6.9.0",
