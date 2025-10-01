@@ -63,7 +63,8 @@ jobs:
       - name: Run Claude review
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          CLAUDE_MODEL: claude-sonnet-4-5
+          # Thử theo thứ tự: model bạn chắc chắn có quyền -> các phương án cũ
+          CLAUDE_MODEL: "claude-sonnet-4-5, claude-3-7-sonnet, claude-3-5-sonnet-20241022, claude-3-haiku-20240307"
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: node scripts/ai-review.js
