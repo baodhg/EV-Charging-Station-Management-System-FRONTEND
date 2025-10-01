@@ -1,0 +1,85 @@
+name: FE CI (typecheck, lint, build, vitest, playwright, a11y)
+
+on:
+  pull_request:
+    branches: [JT92-Fanclub]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "index.html"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.*"
+      - "tsconfig*.json"
+      - ".eslintrc.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fe-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fe-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      # 1) Typecheck (TS)
+      - name: Typecheck
+        run: npm run typecheck --if-present || npx tsc -noEmit
+
+      # 2) Lint
+      - name: Lint
+        run: npm run lint --if-present || npx eslint .
+
+      # 3) Build (Vite)
+      - name: Build
+        run: npm run build || npx vite build
+
+      # 4) Unit/UI tests (Vitest)
+      - name: Vitest
+        run: |
+          if npm run | grep -q " vitest"; then
+            npm run test --silent || npm run vitest --silent || npx vitest run
+          else
+            npx vitest run
+          fi
+
+      # 5) E2E (Playwright) — dùng webServer từ playwright.config.ts nếu có
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+      - name: E2E (Playwright)
+        run: npx playwright test
+
+      # 6) A11y (pa11y-ci) — tự khởi động dev server rồi chạy pa11y
+      - name: A11y (start-server-and-test + pa11y-ci)
+        run: npx start-server-and-test "npm:dev" http://localhost:5173 "pa11y-ci --reporter json > pa11y-report.json"
+
+      # Artifacts
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fe-reports
+          path: |
+            dist
+            coverage
+            playwright-report
+            test-results
+            pa11y-report.json
+          if-no-files-found: ignore
