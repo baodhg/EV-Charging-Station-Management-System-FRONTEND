@@ -1,0 +1,18 @@
+[
+  {
+    "title": "XSS in SearchBox",
+    "body": "Unescaped user input flows into innerHTML.",
+    "severity": "High",
+    "file": "src/components/SearchBox.tsx",
+    "line": 42,
+    "rule": "xss/unsafe-innerhtml",
+    "labels": ["security", "frontend"],
+    "suggestion": "Use textContent or sanitize.",
+    "patch": "--- a/src/components/SearchBox.tsx\n+++ b/src/components/SearchBox.tsx\n@@\n- el.innerHTML = query;\n+ el.textContent = query;"
+  },
+  {
+    "title": "Auth bypass",
+    "severity": "Critical",
+    "body": "Route /admin missing auth guard."
+  }
+]

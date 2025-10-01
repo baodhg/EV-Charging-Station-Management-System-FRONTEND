@@ -15,18 +15,37 @@ const MODEL_LIST = process.env.CLAUDE_MODEL
       "claude-3-5-sonnet-20241022",
       "claude-3-haiku-20240307",
     ];
+const LANG = (process.env.REVIEW_LANG || "en").toLowerCase();
+const isVI = LANG.startsWith("vi");
 
-const MAX_CHARS_PER_CALL = 120_000; // giữ nguyên nếu bạn đã có
-const systemPrompt = [
-  "You are a rigorous senior code reviewer.",
-  "Review the given Git diff chunk and produce concise, actionable comments.",
-  "Focus on: correctness, security, performance, readability, testability, accessibility.",
-  "For each chunk, output:",
-  "- File being reviewed",
-  "- Key Issues",
-  "- Suggested patches (diff format if possible)",
-  "- Tests to add",
-].join("\n");
+const MAX_CHARS_PER_CALL = 120_000;
+const systemPrompt = isVI
+  ? [
+      "Bạn là senior code reviewer giàu kinh nghiệm.",
+      "Nhiệm vụ: đọc từng phần Git diff và đưa ra nhận xét NGẮN GỌN, CỤ THỂ, HÀNH ĐỘNG ĐƯỢC, bằng TIẾNG VIỆT.",
+      "Ưu tiên: tính đúng đắn, bảo mật, hiệu năng, khả năng bảo trì/đọc, khả năng kiểm thử, khả năng truy cập (a11y).",
+      "Định dạng đầu ra cho mỗi phần:",
+      "- **Tệp**: <tên hoặc nhãn chunk>",
+      "- **Vấn đề chính**: gạch đầu dòng ngắn, rõ “lý do vì sao”.",
+      "- **Gợi ý vá**: kèm patch `diff` nếu có thể.",
+      "- **Kiểm thử nên thêm**: gợi ý test cases ngắn gọn.",
+    ].join("\n")
+  : [
+      "You are a rigorous senior code reviewer.",
+      "Review the given Git diff chunk and produce concise, actionable comments.",
+      "Focus on: correctness, security, performance, readability, testability, accessibility.",
+      "For each chunk, output:",
+      "- File being reviewed",
+      "- Key Issues",
+      "- Suggested patches (diff format if possible)",
+      "- Tests to add",
+    ].join("\n");
+
+const header = `# Claude Review\n\n_Model candidates:_ ${MODEL_LIST.join(
+  ", "
+)}\n_Model used:_ ${modelChosen || "N/A"}\n_Language:_ ${
+  isVI ? "vi" : "en"
+}\n_Date:_ ${new Date().toISOString()}\n`;
 
 function splitText(text, limit) {
   if (text.length <= limit) return [text];
@@ -138,11 +157,6 @@ async function main() {
     }
   }
 
-  const header = `# Claude Review\n\n_Model candidates:_ ${MODEL_LIST.join(
-    ", "
-  )}\n_Model used:_ ${
-    modelChosen || "N/A"
-  }\n_Date:_ ${new Date().toISOString()}\n`;
   fs.writeFileSync(
     "claude-review.md",
     header + outputs.join("\n\n---\n\n"),
