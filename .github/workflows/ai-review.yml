@@ -27,7 +27,7 @@ jobs:
           CLAUDE_MODEL: claude-sonnet-4-5
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: node scripts/review.js
+        run: node scripts/ai-review.js
       - uses: actions/upload-artifact@v4
         with:
           name: ai-review-output
