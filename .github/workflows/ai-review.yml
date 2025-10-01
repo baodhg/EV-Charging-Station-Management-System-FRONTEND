@@ -1,12 +1,13 @@
 name: AI Code Review (Claude)
 on:
   pull_request:
-    branches: [main] # base branch đích
+    branches: [main]
     paths:
       - "src/**"
       - "package.json"
       - "vite.config.*"
       - ".eslintrc.*"
+
 permissions:
   contents: read
   pull-requests: write
@@ -33,7 +34,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Lấy BASE/HEAD SHA: ưu tiên event PR, fallback env, rồi tới GITHUB_SHA
+          # Lấy BASE/HEAD SHA
           BASE="${{ github.event.pull_request.base.sha }}"
           HEAD="${{ github.event.pull_request.head.sha }}"
           : "${BASE:=${PR_BASE_SHA:-}}"
@@ -42,29 +43,32 @@ jobs:
           echo "BASE=$BASE"
           echo "HEAD=$HEAD"
 
-          # Đảm bảo có lịch sử 2 commit này
-          git fetch --no-tags --depth=1 origin "$BASE" || true
-          git fetch --no-tags --depth=1 origin "$HEAD" || true
+          # Fetch đủ lịch sử để tính merge-base (depth=50 an toàn hơn)
+          git fetch --no-tags --depth=50 origin "$BASE" || echo "Warn: fetch BASE failed"
+          git fetch --no-tags --depth=50 origin "$HEAD" || echo "Warn: fetch HEAD failed"
 
-          # Nếu có merge-base thì dùng triple-dot, nếu không thì fallback two-dot
-          if git merge-base --is-ancestor "$BASE" "$HEAD" || git merge-base "$BASE" "$HEAD" >/dev/null 2>&1; then
+          # Thử triple-dot trước; nếu không có merge-base thì fallback two-dot
+          if git merge-base "$BASE" "$HEAD" >/dev/null 2>&1; then
             echo "Using triple-dot diff (BASE...HEAD)"
-            git diff "$BASE...$HEAD" > pr.diff || true
+            git diff "$BASE...$HEAD" > pr.diff
           else
             echo "No merge base. Falling back to two-dot diff (BASE..HEAD)"
-            git diff "$BASE..$HEAD" > pr.diff || true
+            git diff "$BASE..$HEAD" > pr.diff
           fi
 
-          # Đảm bảo luôn có file
-          [ -f pr.diff ] || : > pr.diff
+          # Kiểm tra file diff có tồn tại và không rỗng
+          if [ ! -s pr.diff ]; then
+            echo "Warning: pr.diff is empty or missing"
+            echo "# No changes detected" > pr.diff
+          fi
 
           echo "diff_path=pr.diff" >> "$GITHUB_OUTPUT"
 
       - name: Run Claude review
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          # Thử theo thứ tự: model bạn chắc chắn có quyền -> các phương án cũ
-          CLAUDE_MODEL: "claude-sonnet-4-5, claude-3-7-sonnet, claude-3-5-sonnet-20241022, claude-3-haiku-20240307"
+          # Danh sách model fallback (script sẽ thử lần lượt nếu model trước fail)
+          CLAUDE_MODEL: "claude-sonnet-4-20250514,claude-3-7-sonnet-20250219,claude-3-5-sonnet-20241022,claude-3-haiku-20240307"
           REVIEW_LANG: vi
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
