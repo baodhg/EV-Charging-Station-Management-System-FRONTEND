@@ -41,12 +41,6 @@ const systemPrompt = isVI
       "- Tests to add",
     ].join("\n");
 
-const header = `# Claude Review\n\n_Model candidates:_ ${MODEL_LIST.join(
-  ", "
-)}\n_Model used:_ ${modelChosen || "N/A"}\n_Language:_ ${
-  isVI ? "vi" : "en"
-}\n_Date:_ ${new Date().toISOString()}\n`;
-
 function splitText(text, limit) {
   if (text.length <= limit) return [text];
   const out = [];
@@ -156,6 +150,12 @@ async function main() {
         );
     }
   }
+
+  const header = `# Claude Review\n\n_Model candidates:_ ${MODEL_LIST.join(
+    ", "
+  )}\n_Model used:_ ${modelChosen || "N/A"}\n_Language:_ ${
+    isVI ? "vi" : "en"
+  }\n_Date:_ ${new Date().toISOString()}\n`;
 
   fs.writeFileSync(
     "claude-review.md",
