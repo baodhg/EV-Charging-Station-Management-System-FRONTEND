@@ -6,18 +6,35 @@ export default function Register() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
+  // 🔹 Khi nhập lại mật khẩu
+  const handleConfirmPasswordChange = (value: string) => {
+    setConfirmPassword(value);
+    if (value && value !== password) {
+      setConfirmPasswordError("Passwords do not match.");
+    } else {
+      setConfirmPasswordError(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!fullName || !email || !password) {
+    if (!fullName || !email || !password || !confirmPassword) {
       setError("Please fill in all required fields.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
 
@@ -34,12 +51,8 @@ export default function Register() {
         throw new Error(response.message || "Register failed");
       }
 
-      // 🔹 Lưu token + user
-      localStorage.setItem("token", response.data.accessToken);
-      localStorage.setItem("user", JSON.stringify(response.data));
-
-      // 🔹 Điều hướng sang dashboard
-      navigate("/dashboard");
+      // ✅ Sau khi đăng ký thành công → quay lại trang login
+      navigate("/login");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Register failed";
       setError(msg);
@@ -68,6 +81,7 @@ export default function Register() {
 
         {/* Form */}
         <form className="space-y-5" onSubmit={handleSubmit}>
+          {/* Full Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Full Name
@@ -82,6 +96,7 @@ export default function Register() {
             />
           </div>
 
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Email
@@ -96,6 +111,7 @@ export default function Register() {
             />
           </div>
 
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Password
@@ -110,6 +126,29 @@ export default function Register() {
             />
           </div>
 
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Confirm Password
+            </label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => handleConfirmPasswordChange(e.target.value)}
+              className={`w-full rounded-2xl border px-4 py-3 focus:ring-2 ${
+                confirmPasswordError
+                  ? "border-red-500 focus:ring-red-400"
+                  : "border-gray-300 focus:ring-blue-500"
+              }`}
+              required
+            />
+            {confirmPasswordError && (
+              <p className="text-sm text-red-500 mt-1">{confirmPasswordError}</p>
+            )}
+          </div>
+
+          {/* Phone */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Phone (optional)
@@ -123,8 +162,10 @@ export default function Register() {
             />
           </div>
 
+          {/* Error message */}
           {error && <p className="text-sm text-red-500">{error}</p>}
 
+          {/* Submit button */}
           <button
             type="submit"
             disabled={isLoading}
