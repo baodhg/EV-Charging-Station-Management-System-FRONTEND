@@ -10,7 +10,7 @@
     "lint": "eslint src scripts vite.config.ts playwright.config.ts",
     "test": "vitest run",
     "e2e": "playwright test",
-    "a11y": "start-server-and-test \"npm:dev\" http://localhost:5173 \"node scripts/run-pa11y.cjs\""
+    "a11y": "start-server-and-test \"npm run dev\" http://localhost:5173 \"node scripts/run-pa11y.mjs\""
   },
   "dependencies": {
     "react": "^19.1.1",
