@@ -1,123 +1,85 @@
-# sdfdsf
-name: FE CI (typecheck, lint, build, vitest, playwright, a11y)
-
+name: AI Code Review (Claude)
 on:
   pull_request:
-    branches: [main]
+    branches: [main] # base branch đích
     paths:
       - "src/**"
-      - "public/**"
-      - "index.html"
       - "package.json"
-      - "package-lock.json"
       - "vite.config.*"
-      - "tsconfig*.json"
       - ".eslintrc.*"
-  workflow_dispatch:
-
 permissions:
   contents: read
+  pull-requests: write
   issues: write
 
-concurrency:
-  group: fe-ci-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  fe-ci:
+  review:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
 
-      - name: Install deps
-        run: npm ci
+      - run: npm i undici
 
-      # 1) Typecheck (TS)
-      - name: Typecheck
-        run: npm run typecheck --if-present || npx tsc -noEmit
+      - name: Install Anthropic SDK (no-save)
+        run: npm i --no-save @anthropic-ai/sdk@^0.27.3
 
-      # 2) Lint
-      - name: Lint
-        run: npm run lint --if-present || npx eslint .
-
-      # 3) Build (Vite)
-      - name: Build
-        run: npm run build || npx vite build
-
-      # 4) Unit/UI tests (Vitest)
-      - name: Vitest
+      - name: Generate PR diff
+        id: diff
+        shell: bash
         run: |
-          if npm run | grep -q " vitest"; then
-            npm run test --silent || npm run vitest --silent || npx vitest run
-          else
-            npx vitest run
-          fi
+          set -euo pipefail
 
-      # 5) E2E (Playwright) — dùng webServer từ playwright.config.ts nếu có
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-      - name: E2E (Playwright)
-        run: npx playwright test
+          # Lấy BASE/HEAD SHA: ưu tiên từ event PR, fallback env, rồi tới GITHUB_SHA
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          : "${BASE:=${PR_BASE_SHA:-}}"
+          : "${HEAD:=${PR_HEAD_SHA:-${GITHUB_SHA}}}"
 
-      # 6) A11y (pa11y-ci) — tự khởi động dev server rồi chạy pa11y
-      - name: A11y (start-server-and-test + pa11y-ci)
-        run: 'npx start-server-and-test "npm:dev" http://localhost:5173 "pa11y-ci --reporter json > pa11y-report.json"'
+          echo "BASE=$BASE"
+          echo "HEAD=$HEAD"
 
-      # Artifacts
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+          # Đảm bảo có lịch sử để diff
+          git fetch --no-tags --depth=1 origin "$BASE" || true
+          git fetch --no-tags --depth=1 origin "$HEAD" || true
+
+          # Tạo diff (triple-dot để so sánh 2 nhánh)
+          git diff "$BASE...$HEAD" > pr.diff || true
+
+          # Nếu vì lý do gì đó diff chưa có, vẫn tạo file trống để tránh lỗi "not found"
+          [ -f pr.diff ] || : > pr.diff
+
+          # Xuất đường dẫn cho step sau (nếu cần dùng)
+          echo "diff_path=pr.diff" >> "$GITHUB_OUTPUT"
+
+      - name: Run Claude review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_MODEL: claude-sonnet-4-5
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/ai-review.js
+
+      - uses: actions/upload-artifact@v4
         with:
-          name: fe-reports
+          name: ai-review-output
           path: |
-            dist
-            coverage
-            playwright-report
-            test-results
-            pa11y-report.json
-          if-no-files-found: ignore
+            review.md
+            issues.json
 
-      - name: Create Issue on CI failure (main only)
-        if: ${{ failure() && github.ref == 'refs/heads/main' }}
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const title = `[CI Failed] ${context.workflow} on ${context.ref} (${new Date().toISOString().slice(0,10)})`;
-            const body = `
-**Workflow:** ${context.workflow}
-**Branch:** ${context.ref}
-**Commit:** ${context.sha}
+      - name: Post PR comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node scripts/post_comment.js
 
-CI failed on \`main\`. Please check the **Actions** logs for details.
-`.trim();
-
-            // (Chống spam) tìm issue đang mở trùng tiêu đề
-            const { data: issues } = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              labels: undefined
-            });
-            const exists = issues.find(i => i.title === title);
-            if (exists) {
-              core.info('Issue already exists, skipping create.');
-            } else {
-              await github.rest.issues.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title,
-                body,
-                labels: ['ci', 'bug'] // tuỳ chọn
-                // assignees: ['your-github-username'] // tuỳ chọn
-              });
-            }
+      - name: Create Issues (High/Critical)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: node scripts/create_issues.js
