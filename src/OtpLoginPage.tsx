@@ -54,7 +54,14 @@ export default function OtpLoginPage() {
       if (response.data.user.roles.includes("Admin")) {
         navigate("/admin");
       } else {
-        navigate("/dashboard");
+        const userId = response.data.user.userId;
+        const onboardingKey = `onboarding_vehicle_skipped_${userId}`;
+        const hasSkipped = localStorage.getItem(onboardingKey) === "true";
+        if (!hasSkipped) {
+          navigate("/vehicle-registration");
+        } else {
+          navigate("/dashboard");
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "OTP verification failed.");
