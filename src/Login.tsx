@@ -32,11 +32,19 @@ export default function Login() {
       localStorage.setItem("token", response.data.accessToken);
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
-      // ✅ Kiểm tra role để redirect
+      // ✅ Kiểm tra role để redirect + onboarding Vehicle
       if (response.data.user.roles.includes("Admin")) {
         navigate("/admin"); // admin → admin dashboard
       } else {
-        navigate("/dashboard"); // user thường → user dashboard
+        const userId = response.data.user.userId;
+        const onboardingKey = `onboarding_vehicle_skipped_${userId}`;
+        const hasSkipped = localStorage.getItem(onboardingKey) === "true";
+        // Nếu chưa skip → điều hướng tới đăng ký xe lần đầu
+        if (!hasSkipped) {
+          navigate("/vehicle-registration");
+        } else {
+          navigate("/dashboard"); // đã skip hoặc đã có xe → dashboard
+        }
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Login failed";

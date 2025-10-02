@@ -272,4 +272,55 @@ export async function getWallet() {
   return api<Wallet>("/api/v1/wallet", { method: "GET" });
 }
 
+//
+// 🔹 VEHICLE API
+//
+
+export interface VehicleModel {
+  modelId: number;
+  brandName: string;
+  modelName: string;
+  releaseYear?: number;
+  batteryCapacityKwh: number;
+  maxChargingPowerKwAc?: number;
+  maxChargingPowerKwDc?: number;
+  isActive: boolean;
+  createdAt: string;
+  supportedConnectors: VehicleModelConnector[];
+}
+
+export interface VehicleModelConnector {
+  connectorTypeId: number;
+  connectorName: string;
+}
+
+export interface CreateDriverVehiclePayload {
+  modelId: number;
+  licensePlate: string;
+  setAsDefault?: boolean;
+}
+
+export interface Vehicle {
+  vehicleId: string;
+  userId?: string;
+  modelId: number;
+  licensePlate: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+//Api lấy danh sách các mẫu xe
+export async function getVehicleModels() {
+  return api<VehicleModel[]>("/api/v1/vehicle-models", { method: "GET" });
+}
+
+//Api tạo xe mới cho người dùng
+export async function createDriverVehicle(payload: CreateDriverVehiclePayload) {
+  return api<Vehicle>("/api/v1/users/me/vehicles", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+
 export default api;
