@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaBolt, FaMapMarkerAlt } from "react-icons/fa";
 import StationDetailsModal from "./StationDetailsModal";
+import DriverStationMap from "./components/DriverStationMap";
 
 interface User {
   userId: string;
@@ -10,11 +11,165 @@ interface User {
   roles: string[];
   phoneNumber?: string;
 }
+type StationConnector = {
+  type: string;
+  power: string;
+  status: "Available" | "Occupied";
+};
+
+interface DriverStation {
+  id: string;
+  name: string;
+  address: string;
+  coordinates: [number, number];
+  availableSlots: number;
+  totalSlots: number;
+  distanceKm: number;
+  avgPower: string;
+  traffic: "Low" | "Moderate" | "High";
+  waitTime: string;
+  connectors: StationConnector[];
+  stateOfChargePercent: number;
+  activePowerKw: number;
+  estimatedCostVnd: number;
+}
+
+const DRIVER_STATIONS: DriverStation[] = [
+  {
+    id: "vincom-dong-khoi",
+    name: "Vincom Center Dong Khoi",
+    address: "72 Le Thanh Ton, District 1, Ho Chi Minh City",
+    coordinates: [106.704871, 10.779781],
+    availableSlots: 3,
+    totalSlots: 4,
+    distanceKm: 2.5,
+    avgPower: "45 kW",
+    traffic: "Low",
+    waitTime: "~5 min",
+    connectors: [
+      { type: "CCS", power: "50 kW", status: "Available" },
+      { type: "Type 2", power: "22 kW", status: "Available" },
+      { type: "CHAdeMO", power: "50 kW", status: "Occupied" },
+    ],
+    stateOfChargePercent: 75,
+    activePowerKw: 45,
+    estimatedCostVnd: 140250,
+  },
+  {
+    id: "saigon-centre",
+    name: "Saigon Centre Tower",
+    address: "65 Le Loi, District 1, Ho Chi Minh City",
+    coordinates: [106.70491, 10.7723],
+    availableSlots: 1,
+    totalSlots: 6,
+    distanceKm: 1.8,
+    avgPower: "60 kW",
+    traffic: "Moderate",
+    waitTime: "~12 min",
+    connectors: [
+      { type: "CCS", power: "90 kW", status: "Available" },
+      { type: "Type 2", power: "22 kW", status: "Occupied" },
+      { type: "GB/T", power: "60 kW", status: "Available" },
+    ],
+    stateOfChargePercent: 62,
+    activePowerKw: 38,
+    estimatedCostVnd: 98000,
+  },
+  {
+    id: "crescent-mall",
+    name: "Crescent Mall District 7",
+    address: "101 Ton Dat Tien, District 7, Ho Chi Minh City",
+    coordinates: [106.72103, 10.72889],
+    availableSlots: 4,
+    totalSlots: 8,
+    distanceKm: 6.4,
+    avgPower: "75 kW",
+    traffic: "Low",
+    waitTime: "~3 min",
+    connectors: [
+      { type: "CCS", power: "120 kW", status: "Available" },
+      { type: "Type 2", power: "11 kW", status: "Available" },
+      { type: "Type 1", power: "7 kW", status: "Available" },
+    ],
+    stateOfChargePercent: 88,
+    activePowerKw: 52,
+    estimatedCostVnd: 186400,
+  },
+];
+
+const formatCurrencyVnd = (value: number) =>
+  new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(value);
+
+const formatAvailability = (available: number, total: number) => `${available}/${total} available`;
+
+const formatDistanceKm = (value: number) => `${value.toFixed(1)} km`;
+
+
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState("Station Map");
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStationId, setSelectedStationId] = useState<string | null>(
+    DRIVER_STATIONS[0]?.id ?? null
+  );
+
+  const stations = DRIVER_STATIONS;
+
+  const filteredStations = useMemo(() => {
+    const normalized = searchTerm.trim().toLowerCase();
+    if (!normalized) {
+      return stations;
+    }
+
+    return stations.filter((station) =>
+      `${station.name} ${station.address}`.toLowerCase().includes(normalized)
+    );
+  }, [searchTerm, stations]);
+
+  useEffect(() => {
+    if (filteredStations.length === 0) {
+      if (selectedStationId !== null) {
+        setSelectedStationId(null);
+      }
+      return;
+    }
+
+    if (!selectedStationId || !filteredStations.some((station) => station.id === selectedStationId)) {
+      setSelectedStationId(filteredStations[0].id);
+    }
+  }, [filteredStations, selectedStationId]);
+
+  const selectedStation = useMemo(
+    () => stations.find((station) => station.id === selectedStationId) ?? null,
+    [stations, selectedStationId]
+  );
+
+  const mapStations = useMemo(
+    () =>
+      filteredStations.map((station) => ({
+        id: station.id,
+        name: station.name,
+        address: station.address,
+        coordinates: station.coordinates,
+        availabilitySummary: formatAvailability(
+          station.availableSlots,
+          station.totalSlots
+        ),
+      })),
+    [filteredStations]
+  );
+
+  const handleStationSelect = useCallback((stationId: string) => {
+    setSelectedStationId(stationId);
+  }, []);
+
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -84,103 +239,190 @@ export default function Dashboard() {
       {/* ================= Station Map ================= */}
       {activeTab === "Station Map" && (
         <>
-          {/* Card */}
           <section className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg mb-8">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h2 className="text-lg font-semibold flex items-center gap-2">
                   <FaBolt /> Currently Charging
                 </h2>
-                <p className="mt-1 flex items-center gap-2">
+                <p className="mt-1 flex items-center gap-2 text-white/90">
                   <FaMapMarkerAlt className="text-white/80" />
-                  Vincom Center Đồng Khởi
+                  {selectedStation ? selectedStation.name : "Pick a station from the map"}
                 </p>
+                {selectedStation && (
+                  <p className="text-sm text-white/80">{selectedStation.address}</p>
+                )}
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold">75%</p>
-                <p className="text-sm">45 kW</p>
-                <p className="text-sm">₫ 140.250</p>
+                <p className="text-2xl font-bold">
+                  {selectedStation ? `${selectedStation.stateOfChargePercent}%` : "--"}
+                </p>
+                <p className="text-sm">
+                  {selectedStation ? `${selectedStation.activePowerKw.toFixed(0)} kW` : "-- kW"}
+                </p>
+                <p className="text-sm">
+                  {selectedStation ? formatCurrencyVnd(selectedStation.estimatedCostVnd) : "--"}
+                </p>
               </div>
             </div>
-            <div className="flex gap-4 mt-6">
-              <button className="flex-1 bg-white text-blue-600 rounded-xl py-2 font-medium hover:bg-gray-100 transition">
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                className={`flex-1 rounded-xl py-2 font-medium transition ${
+                  selectedStation
+                    ? "bg-white text-blue-600 hover:bg-gray-100"
+                    : "bg-white/40 text-blue-100 cursor-not-allowed"
+                }`}
+                disabled={!selectedStation}
+              >
                 Stop Charging
               </button>
               <button
-                onClick={() => setIsDetailsOpen(true)}
-                className="flex-1 bg-white text-blue-600 rounded-xl py-2 font-medium hover:bg-gray-100 transition"
+                type="button"
+                onClick={() => selectedStation && setIsDetailsOpen(true)}
+                className={`flex-1 rounded-xl py-2 font-medium transition ${
+                  selectedStation
+                    ? "bg-white text-blue-600 hover:bg-gray-100"
+                    : "bg-white/40 text-blue-100 cursor-not-allowed"
+                }`}
+                disabled={!selectedStation}
               >
                 View Details
               </button>
             </div>
           </section>
 
-          {/* Modal */}
           <StationDetailsModal
-            isOpen={isDetailsOpen}
+            isOpen={isDetailsOpen && !!selectedStation}
             onClose={() => setIsDetailsOpen(false)}
-            address="72 Lê Thánh Tôn, District 1, Ho Chi Minh City"
-            avgPower="45 kW"
-            traffic="Low"
-            waitTime="~5 min"
-            connectors={[
-              { type: "CCS", power: "50 kW", status: "Available" },
-              { type: "Type 2", power: "22 kW", status: "Available" },
-              { type: "CHAdeMO", power: "50 kW", status: "Occupied" },
-            ]}
+            address={selectedStation?.address ?? ""}
+            avgPower={selectedStation?.avgPower ?? "--"}
+            traffic={selectedStation?.traffic ?? "--"}
+            waitTime={selectedStation?.waitTime ?? "--"}
+            connectors={selectedStation?.connectors ?? []}
           />
 
-          {/* Map Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-md">
-              <h3 className="text-lg font-semibold mb-4">Charging Station Map</h3>
-              <div className="flex items-center gap-2 mb-4">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2 rounded-2xl bg-white p-6 shadow-md">
+              <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">Charging Station Map</h3>
+                  <p className="text-sm text-gray-500">
+                    Search and compare nearby stations before reserving a spot.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="Search for location..."
-                  className="flex-1 px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-400"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search by station or address..."
+                  className="flex-1 rounded-xl border border-gray-300 px-4 py-2 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
-                <button className="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition">
-                  Search
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  disabled={!searchTerm.trim()}
+                  className={`rounded-xl px-4 py-2 font-medium transition ${
+                    searchTerm.trim()
+                      ? "bg-blue-600 text-white hover:bg-blue-700"
+                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  Clear
                 </button>
               </div>
-              <div className="h-64 rounded-xl bg-gradient-to-br from-blue-200 to-blue-300 flex items-center justify-center text-gray-600">
-                [Map Placeholder]
+              <div className="mt-4">
+                <DriverStationMap
+                  stations={mapStations}
+                  selectedStationId={selectedStationId}
+                  onStationSelect={handleStationSelect}
+                  className="h-72 w-full"
+                />
               </div>
             </div>
 
-            {/* Nearby stations */}
-            <aside className="bg-white rounded-2xl p-6 shadow-md">
-              <h3 className="text-lg font-semibold mb-4">Nearby Stations</h3>
-              <div className="space-y-4">
-                <div className="p-4 rounded-xl border border-gray-200 shadow-sm">
-                  <div className="flex justify-between items-center mb-2">
-                    <p className="font-semibold">Vincom Center Đồng Khởi</p>
-                    <span className="text-sm px-2 py-1 bg-green-100 text-green-600 rounded-full">
-                      Online
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600">72 Lê Thánh Tôn, Quận 1</p>
-                  <p className="text-sm text-gray-600">2/4 available</p>
-                  <p className="text-sm font-medium text-blue-600">2.5 km</p>
-                  <div className="flex gap-2 mt-3">
-                    <button className="flex-1 px-3 py-2 rounded-xl bg-blue-600 text-white text-sm hover:bg-blue-700 transition">
-                      Reserve
-                    </button>
-                    <button
-                      onClick={() => setIsDetailsOpen(true)}
-                      className="flex-1 px-3 py-2 rounded-xl bg-gray-800 text-white text-sm hover:bg-black transition"
-                    >
-                      Details
-                    </button>
-                  </div>
+            <aside className="rounded-2xl bg-white p-6 shadow-md">
+              <h3 className="mb-4 text-lg font-semibold">Nearby Stations</h3>
+              {filteredStations.length === 0 ? (
+                <p className="text-sm text-gray-500">
+                  No station matches your search. Adjust the filters to see more options.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {filteredStations.map((station) => {
+                    const isSelected = station.id === selectedStationId;
+                    return (
+                      <div
+                        key={station.id}
+                        className={`rounded-xl border p-4 transition ${
+                          isSelected
+                            ? "border-blue-500 shadow-md"
+                            : "border-gray-200 shadow-sm hover:border-blue-300"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-semibold text-gray-900">{station.name}</p>
+                            <p className="text-sm text-gray-600">{station.address}</p>
+                          </div>
+                          <span
+                            className={`rounded-full px-2 py-1 text-xs font-medium ${
+                              station.availableSlots > 0
+                                ? "bg-green-100 text-green-600"
+                                : "bg-red-100 text-red-600"
+                            }`}
+                          >
+                            {station.availableSlots > 0 ? "Online" : "Offline"}
+                          </span>
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-gray-600">
+                          <p>{formatAvailability(station.availableSlots, station.totalSlots)}</p>
+                          <p className="text-right font-medium text-blue-600">
+                            {formatDistanceKm(station.distanceKm)}
+                          </p>
+                          <p>Avg power: {station.avgPower}</p>
+                          <p>Traffic: {station.traffic}</p>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {station.connectors.map((connector) => (
+                            <span
+                              key={`${station.id}-${connector.type}-${connector.power}`}
+                              className="rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600"
+                            >
+                              {connector.type} - {connector.power}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="mt-4 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleStationSelect(station.id)}
+                            className="flex-1 rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+                          >
+                            Reserve
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleStationSelect(station.id);
+                              setIsDetailsOpen(true);
+                            }}
+                            className="flex-1 rounded-xl bg-gray-800 px-3 py-2 text-sm font-medium text-white transition hover:bg-black"
+                          >
+                            Details
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
+              )}
             </aside>
           </div>
         </>
       )}
-
       {/* ================= Reservations ================= */}
       {activeTab === "Reservations" && (
         <div className="bg-white rounded-2xl p-6 shadow-md">
@@ -347,3 +589,16 @@ export default function Dashboard() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
