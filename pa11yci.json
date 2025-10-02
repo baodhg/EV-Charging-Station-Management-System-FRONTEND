@@ -1,0 +1,6 @@
+﻿{
+  "urls": ["http://localhost:5173/"],
+  "standard": "WCAG2AA",
+  "concurrency": 2,
+  "threshold": 0
+}

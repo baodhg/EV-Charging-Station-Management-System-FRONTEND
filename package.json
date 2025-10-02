@@ -1,0 +1,45 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -noEmit",
+    "lint": "eslint src scripts vite.config.ts playwright.config.ts",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "a11y": "start-server-and-test \"npm run dev\" http://localhost:5173 \"node scripts/run-pa11y.mjs\""
+  },
+  "dependencies": {
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.9.1"
+  }, 
+  "devDependencies": {
+    "@playwright/test": "^1.55.1",
+    "@testing-library/jest-dom": "^6.9.0",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^24.6.1",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@types/react-router-dom": "^5.3.3",
+    "@typescript-eslint/eslint-plugin": "7.18.0",
+    "@typescript-eslint/parser": "7.18.0",
+    "@vitejs/plugin-react": "^5.0.3",
+    "autoprefixer": "^10.4.21",
+    "eslint": "8.57.0",
+    "eslint-plugin-react": "7.37.2",
+    "eslint-plugin-react-hooks": "4.6.2",
+    "jsdom": "^27.0.0",
+    "pa11y-ci": "^4.0.1",
+    "postcss": "^8.5.6",
+    "start-server-and-test": "^2.1.2",
+    "tailwindcss": "^3.4.13",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.7",
+    "vitest": "^3.2.4"
+  }
+}
