@@ -7,6 +7,7 @@ interface User {
   userId: string;
   fullName: string;
   email: string;
+  email2: string;
   roles: string[];
   phoneNumber?: string;
 }
