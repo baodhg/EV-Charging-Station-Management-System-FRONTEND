@@ -1,7 +1,7 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+﻿import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import type { ReactNode } from "react";
 
-// 🔹 Import các pages
+// 🔹 Import các page
 import Dashboard from "./Dashboard";
 import Reservations from "./Reservations";
 import History from "./History";
@@ -10,7 +10,6 @@ import Wallet from "./Wallet";
 import Login from "./Login";
 import Register from "./Register";
 import ForgotPasswordPage from "./ForgotPasswordPage";
-import OtpLoginPage from "./OtpLoginPage"; // 👈 mới thêm
 import ProfileEditPage from "./ProfileEditPage";
 import ChangePasswordPage from "./ChangePasswordPage";
 import AdminDashboard from "./AdminDashboard";
@@ -42,30 +41,28 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* 🔹 Default redirect */}
+        {/* ðŸ”¹ Default redirect */}
         <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* 🔹 Auth */}
+        {/* ðŸ”¹ Auth */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/otp-login" element={<OtpLoginPage />} /> {/* 👈 Login bằng OTP */}
-
-        {/* 🔹 User routes */}
+        {/* ðŸ”¹ User routes */}
         <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
         <Route path="/reservations" element={<PrivateRoute element={<Reservations />} />} />
         <Route path="/history" element={<PrivateRoute element={<History />} />} />
         <Route path="/wallet" element={<PrivateRoute element={<Wallet />} />} />
 
-        {/* 🔹 Profile + Edit + Change Password */}
+        {/* ðŸ”¹ Profile + Edit + Change Password */}
         <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
         <Route path="/profile/edit" element={<PrivateRoute element={<ProfileEditPage />} />} />
         <Route path="/profile/change-password" element={<PrivateRoute element={<ChangePasswordPage />} />} />
 
-        {/* 🔹 Admin routes */}
+        {/* ðŸ”¹ Admin routes */}
         <Route path="/admin" element={<AdminRoute element={<AdminDashboard />} />} />
 
-        {/* 🔹 404 fallback */}
+        {/* ðŸ”¹ 404 fallback */}
         <Route
           path="*"
           element={
@@ -80,3 +77,6 @@ function App() {
 }
 
 export default App;
+
+
+

@@ -1,5 +1,5 @@
 //
-// 🔹 Common API wrapper
+// Shared API wrapper
 //
 export interface ApiResponse<T> {
   success: boolean;
@@ -20,7 +20,7 @@ function resolveUrl(path: string) {
 async function api<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>> {
   if (!hasBaseUrl && import.meta.env.DEV && !baseUrlWarningShown) {
     console.info(
-      "⚠️ VITE_API_BASE_URL is not set; using relative paths. Ensure the dev proxy forwards /api to the backend."
+      "?? VITE_API_BASE_URL is not set; using relative paths. Ensure the dev proxy forwards /api to the backend."
     );
     baseUrlWarningShown = true;
   }
@@ -40,7 +40,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>>
       ...init,
     });
   } catch (error) {
-    throw new Error("❌ Unable to reach the backend API. Confirm the server is running.");
+    throw new Error("?? Unable to reach the backend API. Confirm the server is running.");
   }
 
   const contentType = response.headers.get("content-type") ?? "";
@@ -61,7 +61,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>>
 }
 
 //
-// 🔹 AUTH API
+// Auth API
 //
 export interface LoginPayload {
   email: string;
@@ -109,57 +109,49 @@ export interface RegisterResponse {
   refreshToken?: string;
 }
 
+export interface RegistrationChallenge {
+  userId: string;
+  email: string;
+  expireAt: string;
+}
+
+export interface VerifyRegisterOtpPayload {
+  userId: string;
+  otpCode: string;
+}
+
 export async function register(payload: RegisterPayload) {
-  return api<RegisterResponse>("/api/v1/auth/register", {
+  return api<RegistrationChallenge>("/api/v1/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function verifyRegisterOtp(payload: VerifyRegisterOtpPayload) {
+  return api<RegisterResponse>("/api/v1/auth/register/verify-otp", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export interface SocialLoginPayload {
+  provider: "google" | "facebook" | "apple";
+  idToken: string;
+  accessToken?: string;
+}
+
+export async function socialLogin(payload: SocialLoginPayload) {
+  return api<LoginResponse>("/api/v1/auth/social-login", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
 //
-// 🔹 OTP LOGIN API
+// OTP LOGIN API
 //
-export interface SendOtpLoginPayload {
-  email?: string;
-  phone?: string;
-}
-
-export interface VerifyOtpLoginPayload {
-  otp: string;
-  email?: string;
-  phone?: string;
-}
-
-export interface OtpLoginResponse {
-  accessToken: string;
-  expiresAt: string;
-  refreshToken?: string;
-  user: {
-    userId: string;
-    fullName: string;
-    email: string;
-    roles: string[];
-  };
-}
-
-// Gửi OTP
-export async function sendOtpLogin(payload: SendOtpLoginPayload) {
-  return api<string>("/api/v1/auth/send-otp-login", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-// Xác thực OTP
-export async function verifyOtpLogin(payload: VerifyOtpLoginPayload) {
-  return api<OtpLoginResponse>("/api/v1/auth/verify-otp-login", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
 //
-// 🔹 USER API
+// User API
 //
 export interface UserProfile {
   userId: string;
@@ -185,7 +177,6 @@ export async function updateProfile(payload: UpdateProfilePayload) {
   });
 }
 
-// 🔹 Đổi mật khẩu
 export async function changePassword(currentPassword: string, newPassword: string) {
   return api<string>("/api/v1/users/change-password", {
     method: "POST",
@@ -197,7 +188,7 @@ export async function changePassword(currentPassword: string, newPassword: strin
 }
 
 //
-// 🔹 PASSWORD RECOVERY API
+// PASSWORD RECOVERY API
 //
 export interface ForgotPasswordPayload {
   email: string;
@@ -224,7 +215,7 @@ export async function resetPassword(payload: ResetPasswordPayload) {
 }
 
 //
-// 🔹 RESERVATIONS API
+// RESERVATIONS API
 //
 export interface Reservation {
   reservationId: string;
@@ -239,7 +230,7 @@ export async function getReservations() {
 }
 
 //
-// 🔹 HISTORY API
+// HISTORY API
 //
 export interface ChargingHistory {
   sessionId: string;
@@ -255,7 +246,7 @@ export async function getHistory() {
 }
 
 //
-// 🔹 WALLET API
+// WALLET API
 //
 export interface Wallet {
   balance: number;

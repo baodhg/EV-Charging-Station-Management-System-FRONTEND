@@ -2,7 +2,7 @@
 {
   "compilerOptions": {
     "lib": ["ES2021", "DOM"],
-    "types": ["node"],
+    "types": ["node", "react", "react-dom"],
     "jsx": "react-jsx",
     "module": "ESNext",
     "target": "ES2021",
@@ -14,3 +14,4 @@
   "include": ["src","scripts","playwright.config.ts","vite.config.ts"],
   "exclude": ["dist","node_modules"]
 }
+
