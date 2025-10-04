@@ -21,7 +21,7 @@ const isVI = LANG.startsWith("vi");
 const MAX_CHARS_PER_CALL = 120_000;
 const systemPrompt = isVI
   ? [
-      "Bạn là senior code reviewer giàu kinh nghiệm.",
+      "Bạn là senior code ReactJs reviewer giàu kinh nghiệm.",
       "Nhiệm vụ: đọc từng phần Git diff và đưa ra nhận xét NGẮN GỌN, CỤ THỂ, HÀNH ĐỘNG ĐƯỢC, bằng TIẾNG VIỆT.",
       "Ưu tiên: tính đúng đắn, bảo mật, hiệu năng, khả năng bảo trì/đọc, khả năng kiểm thử, khả năng truy cập (a11y).",
       "Định dạng đầu ra cho mỗi phần:",
@@ -31,7 +31,7 @@ const systemPrompt = isVI
       "- **Kiểm thử nên thêm**: gợi ý test cases ngắn gọn.",
     ].join("\n")
   : [
-      "You are a rigorous senior code reviewer.",
+      "You are a rigorous senior Reactjs code reviewer.",
       "Review the given Git diff chunk and produce concise, actionable comments.",
       "Focus on: correctness, security, performance, readability, testability, accessibility.",
       "For each chunk, output:",
