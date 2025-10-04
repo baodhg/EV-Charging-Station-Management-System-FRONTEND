@@ -1,7 +1,7 @@
 name: AI Code Review (Claude)
 on:
   pull_request:
-    branches: [main]
+    branches: [JT92-FanClub]
     paths:
       - "src/**"
       - "package.json"
