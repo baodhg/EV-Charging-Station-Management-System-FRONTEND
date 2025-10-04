@@ -1,7 +1,7 @@
   import React from "react";
   import ReactDOM from "react-dom/client";
   import App from "./App.tsx";
-  import "./index.css";   // <- phải có dòng này
+  import "./index.css";   // <- phải có dòng này kệ chú
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
